@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM + RAG Function Execution API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #f8f9fa;
+        }
+        .history {
+            margin-top: 20px;
+        }
+        .function-list {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>LLM + RAG Function Execution API</h1>
+        
+        <div class="input-group">
+            <h3>Execute Function</h3>
+            <input type="text" id="prompt" placeholder="Enter your prompt (e.g., 'open calculator')">
+            <button onclick="executeFunction()">Execute</button>
+        </div>
+
+        <div class="result" id="result">
+            <h3>Result</h3>
+            <pre id="resultContent">No result yet</pre>
+        </div>
+
+        <div class="function-list">
+            <h3>Available Functions</h3>
+            <div id="functionsList"></div>
+        </div>
+
+        <div class="history">
+            <h3>Execution History</h3>
+            <div id="historyContent"></div>
+        </div>
+    </div>
+
+    <script>
+        // Load available functions on page load
+        window.onload = async () => {
+            await loadFunctions();
+            await loadHistory();
+        };
+
+        async function executeFunction() {
+            const prompt = document.getElementById('prompt').value;
+            try {
+                const response = await fetch('/execute', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ prompt }),
+                });
+                const data = await response.json();
+                document.getElementById('resultContent').textContent = JSON.stringify(data, null, 2);
+                await loadHistory(); // Refresh history after execution
+            } catch (error) {
+                document.getElementById('resultContent').textContent = `Error: ${error.message}`;
+            }
+        }
+
+        async function loadFunctions() {
+            try {
+                const response = await fetch('/functions');
+                const data = await response.json();
+                const functionsList = document.getElementById('functionsList');
+                functionsList.innerHTML = '<ul>' + 
+                    Object.entries(data.functions).map(([name, info]) => 
+                        `<li><strong>${name}</strong>: ${info.description} (Category: ${info.category})</li>`
+                    ).join('') + 
+                    '</ul>';
+            } catch (error) {
+                console.error('Error loading functions:', error);
+            }
+        }
+
+        async function loadHistory() {
+            try {
+                const response = await fetch('/context');
+                const data = await response.json();
+                const historyContent = document.getElementById('historyContent');
+                historyContent.innerHTML = '<ul>' + 
+                    data.context_memory.map(item => 
+                        `<li>${item.timestamp}: ${item.prompt} → ${item.function}</li>`
+                    ).join('') + 
+                    '</ul>';
+            } catch (error) {
+                console.error('Error loading history:', error);
+            }
+        }
+    </script>
+</body>
+</html> 
