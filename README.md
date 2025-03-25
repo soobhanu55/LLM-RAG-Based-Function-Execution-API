@@ -1,4 +1,4 @@
-The server is now running on port 8080. You can access the application by: 
+The server is running on port 8080. You can access the application by: 
 •	Opening your web browser
 •	Going to: http://localhost:8080
 
